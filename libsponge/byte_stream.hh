@@ -2,7 +2,7 @@
 #define SPONGE_LIBSPONGE_BYTE_STREAM_HH
 
 #include <string>
-
+#include <vector>
 //! \brief An in-order byte stream.
 
 //! Bytes are written on the "input" side and read from the "output"
@@ -16,7 +16,14 @@ class ByteStream {
     // all, but if any of your tests are taking longer than a second,
     // that's a sign that you probably want to keep exploring
     // different approaches.
+    std::vector<u_char> _queue;
+    size_t _head, _rear;
+    size_t _written_size;  // total bytes written into the stream.
+    size_t _read_size;     // total bytes read from the stream.
 
+    size_t _buffer_size;  // current number of bytes in buffer.
+    size_t _capacity_size;
+    bool _end_input{};
     bool _error{};  //!< Flag indicating that the stream suffered an error.
 
   public:
@@ -35,7 +42,7 @@ class ByteStream {
     size_t remaining_capacity() const;
 
     //! Signal that the byte stream has reached its ending
-    void end_input();
+    void end_input() { _end_input = true; }
 
     //! Indicate that the stream suffered an error.
     void set_error() { _error = true; }
@@ -56,7 +63,7 @@ class ByteStream {
     std::string read(const size_t len);
 
     //! \returns `true` if the stream input has ended
-    bool input_ended() const;
+    bool input_ended() const { return _end_input; }
 
     //! \returns `true` if the stream has suffered an error
     bool error() const { return _error; }
