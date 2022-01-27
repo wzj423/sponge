@@ -25,24 +25,21 @@ class StreamReassembler {
 
     size_t
         _unassembled_byte_idx;  //!< Index of the first unassembled byte ,which starts from zero and is needless to be accpted
-    size_t _unassembled_range_length;  
-    size_t _unassembled_bytes_num; //!< Number of unassembled bytes. The different between it and `_unassembled_range_length` is that it will not count blanks between two data slices.
+    size_t _unassembled_range_length;
+    size_t
+        _unassembled_bytes_num;  //!< Number of unassembled bytes. The different between it and `_unassembled_range_length` is that it will not count blanks between two data slices.
 
     ByteStream _output;  //!< The reassembled in-order byte stream
     size_t _capacity;    //!< The maximum number of bytes
 
-    //size_t current_capacity() const;
-    size_t current_max_byte_idx() const;
+    inline size_t current_max_byte_idx() const;
 
-    void update_unassembled_bytes_status();
-    void update_eof_status();
+    inline void update_unassembled_bytes_status();
+    inline void update_eof_status();
 
-    bool str_insertable(const std::string &data, const uint64_t index) const;
     std::pair<size_t, std::string> filter_insertable_string(std::string data, uint64_t index) const;
 
     void insert_string_into_map(const std::string &data, const uint64_t index);
-
-    void display(std::string title) const;
 
     /* Merge two (index,data) slice entries, return the merged new entry, assuming that index_x <= index_y and the two
      * entries can be merged. */
