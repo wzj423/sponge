@@ -3,17 +3,56 @@
 
 #include "byte_stream.hh"
 
+#include <array>
 #include <cstdint>
+#include <cstdio>
+#include <exception>
+#include <iostream>
+#include <map>
 #include <string>
+#include <utility>
+#include <vector>
 
 //! \brief A class that assembles a series of excerpts from a byte stream (possibly out of order,
 //! possibly overlapping) into an in-order byte stream.
 class StreamReassembler {
   private:
     // Your code here -- add private members as necessary.
+    std::map<size_t, std::string> _unassembled_strs;  //
+    size_t
+        _eof_idx;  //!< Index of the eof byte flag,namely the next byte after the last byte and is default set to SIZE_MAX).
+    bool _is_eof_set;
+
+    size_t
+        _unassembled_byte_idx;  //!< Index of the first unassembled byte ,which starts from zero and is needless to be accpted
+    size_t _unassembled_range_length;  
+    size_t _unassembled_bytes_num; //!< Number of unassembled bytes. The different between it and `_unassembled_range_length` is that it will not count blanks between two data slices.
 
     ByteStream _output;  //!< The reassembled in-order byte stream
     size_t _capacity;    //!< The maximum number of bytes
+
+    //size_t current_capacity() const;
+    size_t current_max_byte_idx() const;
+
+    void update_unassembled_bytes_status();
+    void update_eof_status();
+
+    bool str_insertable(const std::string &data, const uint64_t index) const;
+    std::pair<size_t, std::string> filter_insertable_string(std::string data, uint64_t index) const;
+
+    void insert_string_into_map(const std::string &data, const uint64_t index);
+
+    void display(std::string title) const;
+
+    /* Merge two (index,data) slice entries, return the merged new entry, assuming that index_x <= index_y and the two
+     * entries can be merged. */
+    std::pair<size_t, std::string> merge_entry(const std::pair<size_t, std::string> &x,
+                                               const std::pair<size_t, std::string> &y);
+
+    //! \brief Assemble string from slices in `_unassembled_strs` and push it into `_output` .
+    //! \note This function will also update `_unassembled_bytes_idx`and `_unassembled_range_length`.
+    //!  Nothing will happen if strings in `_unassembled_strs` cannot be assembled.
+    void assemble_string();
 
   public:
     //! \brief Construct a `StreamReassembler` that will store up to `capacity` bytes.
@@ -46,6 +85,15 @@ class StreamReassembler {
     //! \brief Is the internal state empty (other than the output stream)?
     //! \returns `true` if no substrings are waiting to be assembled
     bool empty() const;
+};
+
+class CapacityOverflowException : public std::exception {
+  public:
+    const char *what() const noexcept override { return "Exceeded Maximum Capacity."; }
+};
+class StringEntryUnmergeableException : public std::exception {
+  public:
+    const char *what() const noexcept override { return "The given string entries are not mergeable."; }
 };
 
 #endif  // SPONGE_LIBSPONGE_STREAM_REASSEMBLER_HH
