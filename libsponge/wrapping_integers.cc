@@ -15,7 +15,12 @@ using namespace std;
 //! \param isn The initial sequence number
 WrappingInt32 wrap(uint64_t n, WrappingInt32 isn) {
     DUMMY_CODE(n, isn);
-    return WrappingInt32{0};
+    /*constexpr uint64_t WrappingInt32Mod = (uint64_t(1)) + std::numeric_limits<uint32_t>::max();
+    return WrappingInt32((n % WrappingInt32Mod + isn.raw_value()) % WrappingInt32Mod);*/
+
+    // or we can exploit overflow
+    //std::cerr<<"Wrap:"<<static_cast<decltype(isn.raw_value())>(n) + isn.raw_value()<<endl;
+    return WrappingInt32(static_cast<decltype(isn.raw_value())>(n) + isn.raw_value());
 }
 
 //! Transform a WrappingInt32 into an "absolute" 64-bit sequence number (zero-indexed)
@@ -29,6 +34,21 @@ WrappingInt32 wrap(uint64_t n, WrappingInt32 isn) {
 //! and the other stream runs from the remote TCPSender to the local TCPReceiver and
 //! has a different ISN.
 uint64_t unwrap(WrappingInt32 n, WrappingInt32 isn, uint64_t checkpoint) {
-    DUMMY_CODE(n, isn, checkpoint);
-    return {};
+    constexpr uint64_t INT32_RANGE = 1ll + std::numeric_limits<uint32_t>::max();
+    constexpr uint64_t INT32_HALF_RANGE = INT32_RANGE>>1;
+    constexpr uint64_t INT32_MASK=~static_cast<uint64_t>(std::numeric_limits<uint32_t>::max());
+
+    uint32_t min_abs_seqno = n - isn; /* unsigned substraction overflow == modular */
+
+    if (checkpoint < min_abs_seqno)
+        return min_abs_seqno;
+    else {
+        uint64_t less_abs_seqno = ((checkpoint - min_abs_seqno) &INT32_MASK) + min_abs_seqno;
+        uint64_t greater_abs_seqno = less_abs_seqno + INT32_RANGE;
+        if (static_cast<uint32_t>(checkpoint - min_abs_seqno) < INT32_HALF_RANGE) {
+            return less_abs_seqno;
+        } else {
+            return greater_abs_seqno;
+        }
+    }
 }

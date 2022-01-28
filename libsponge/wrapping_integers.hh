@@ -1,7 +1,10 @@
 #ifndef SPONGE_LIBSPONGE_WRAPPING_INTEGERS_HH
 #define SPONGE_LIBSPONGE_WRAPPING_INTEGERS_HH
 
+#include <climits>
 #include <cstdint>
+#include <iostream>
+#include <numeric>
 #include <ostream>
 
 //! \brief A 32-bit integer, expressed relative to an arbitrary initial sequence number (ISN)

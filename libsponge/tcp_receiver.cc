@@ -11,7 +11,7 @@ void DUMMY_CODE(Targs &&... /* unused */) {}
 using namespace std;
 
 void TCPReceiver::segment_received(const TCPSegment &seg) {
-    DUMMY_CODE(seg);
+    DUMMY_CODE(seg, this->_capacity);  // make it pass compiler checks.
 }
 
 optional<WrappingInt32> TCPReceiver::ackno() const { return {}; }
