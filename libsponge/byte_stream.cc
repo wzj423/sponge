@@ -60,6 +60,7 @@ void ByteStream::pop_output(const size_t len) {
 }
 
 //! Read (i.e., copy and then pop) the next "len" bytes of the stream
+//! If no "len" bytes available, then `read` will return every byte in stream.
 //! \param[in] len bytes will be popped and returned
 //! \returns a string
 std::string ByteStream::read(const size_t len) {
