@@ -18,6 +18,9 @@
 //! segments if the retransmission timer expires.
 class TCPSender {
   private:
+    enum _SenderState { ERROR, CLOSED, SYN_SENT, SYN_ACKED, SYN_ACKED_EOF, FIN_SENT, FIN_ACKED };
+    _SenderState _state() const;
+
     size_t _consecutive_retransmissions_count{0};
     bool _is_syn_set{false};
     bool _is_fin_set{false};
@@ -25,9 +28,31 @@ class TCPSender {
     std::map<size_t, TCPSegment> _flight_seg;
     size_t _flight_bytes_num{0};
 
-    size_t _total_lifetime{0};          // how many milliseconds this TCPSender has survived.
-    size_t _since_last_resend_time{0};  // milliseconds since last resend attempt.
-    size_t _rto{0};                     // current retransmission timeout. (might grow exponenially)
+    class Ticker {
+      public:
+        // size_t _consecutive_retransmissions_count{0};
+        size_t _since_last_resend_time{0};  // milliseconds since last resend attempt.
+        size_t _rto;                        // current retransmission timeout. (might grow exponenially)
+        unsigned int _initial_retransmission_timeout;
+
+      public:
+        Ticker(unsigned int _init_rto) : _rto(_init_rto), _initial_retransmission_timeout(_init_rto) {
+            std::cerr << "_init_rto=" << _init_rto << " " << _rto << std::endl;
+        }
+        void tick(const size_t ms_since_last_tick) { _since_last_resend_time += ms_since_last_tick; }
+        bool triggered() const { return _since_last_resend_time >= _rto; }
+        void grow() { _rto *= 2; }
+        void restart() { _since_last_resend_time = 0; }
+        void reset() { _rto = _initial_retransmission_timeout; }
+        void grow_restart() {
+            grow();
+            restart();
+        }
+        void reset_restart() {
+            reset();
+            restart();
+        }
+    };
 
     size_t _last_window_size{0};
 
@@ -39,7 +64,7 @@ class TCPSender {
 
     //! retransmission timer for the connection
     unsigned int _initial_retransmission_timeout;
-
+    Ticker ticker;
     //! outgoing stream of bytes that have not yet been sent
     ByteStream _stream;
 
