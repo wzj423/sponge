@@ -13,6 +13,9 @@
 using namespace std;
 
 constexpr uint16_t DPORT_DFLT = 1440;
+template <typename... Targs>
+void DUMMY_CODE(Targs &&... /* unused */) {}
+
 
 static void show_usage(const char *argv0, const char *msg) {
     cout << "Usage: " << argv0 << " [options] <host> <port>\n\n"
@@ -104,6 +107,7 @@ static tuple<TCPConfig, FdAdapterConfig, bool> get_config(int argc, char **argv)
 }
 
 int main(int argc, char **argv) {
+    DUMMY_CODE(DPORT_DFLT);
     try {
         if (argc < 3) {
             show_usage(argv[0], "ERROR: required arguments are missing.");
