@@ -21,6 +21,14 @@ class TCPConnection {
     //! in case the remote TCPConnection doesn't know we've received its whole stream?
     bool _linger_after_streams_finish{true};
 
+    /* Furthur implementation of Lab 4 */
+    size_t _time_since_last_segment_received{0};
+
+    //! \brief Write data from `_sender.segments_out()` to the outbound byte stream, adding ackno & win from `-_receiver`.
+    void send_segments_from_sender();
+
+    bool _is_active{false};
+
   public:
     //! \name "Input" interface for the writer
     //!@{
