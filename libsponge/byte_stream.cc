@@ -43,10 +43,11 @@ size_t ByteStream::write(const string &data) {
 //! \param[in] len bytes will be copied from the output side of the buffer
 string ByteStream::peek_output(const size_t len) const {
     string output;
-    size_t pop_size = min(len, _buffer_size);
+    size_t pop_size = min(len, _buffer_size), target = _head;
     for (size_t i = 0; i < pop_size; ++i) {
-        auto t = (_head + i + 1) % _capacity_size;
-        output += _queue[t];
+        // auto t = (_head + i + 1) % _capacity_size;
+        target = target + 1 == _capacity_size ? 0 : target + 1;
+        output += _queue[target];
     }
     return output;
 }

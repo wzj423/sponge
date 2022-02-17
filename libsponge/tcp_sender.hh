@@ -36,9 +36,7 @@ class TCPSender {
         unsigned int _initial_retransmission_timeout;
 
       public:
-        Ticker(unsigned int _init_rto) : _rto(_init_rto), _initial_retransmission_timeout(_init_rto) {
-            std::cerr << "_init_rto=" << _init_rto << " " << _rto << std::endl;
-        }
+        Ticker(unsigned int _init_rto) : _rto(_init_rto), _initial_retransmission_timeout(_init_rto) {}
         void tick(const size_t ms_since_last_tick) { _since_last_resend_time += ms_since_last_tick; }
         bool triggered() const { return _since_last_resend_time >= _rto; }
         void grow() { _rto *= 2; }

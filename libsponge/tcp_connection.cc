@@ -97,7 +97,7 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
     } else if (_receiver.ackno().has_value() && (seg.length_in_sequence_space() == 0) &&
                seg.header().seqno == _receiver.ackno().value() - 1) {
         _sender.send_empty_segment();
-        assert(false);
+        // assert(false);
     }
     send_segments_from_sender();
 }

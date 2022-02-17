@@ -23,9 +23,7 @@ TCPSender::TCPSender(const size_t capacity, const uint16_t retx_timeout, const s
     : _isn(fixed_isn.value_or(WrappingInt32{random_device()()}))
     , _initial_retransmission_timeout{retx_timeout}
     , ticker(_initial_retransmission_timeout)
-    , _stream(capacity) {
-    DUMMY_CODE(_initial_retransmission_timeout);
-}
+    , _stream(capacity) {}
 
 uint64_t TCPSender::bytes_in_flight() const { return _flight_bytes_num; }
 
