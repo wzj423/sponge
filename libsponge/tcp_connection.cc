@@ -22,7 +22,11 @@ size_t TCPConnection::time_since_last_segment_received() const { return _time_si
 
 void TCPConnection::segment_received(const TCPSegment &seg) {
     _time_since_last_segment_received = 0;
-    bool ack_needed = seg.length_in_sequence_space();
+
+    bool ack_needed = seg.length_in_sequence_space();  // if the incoming segment occupied any sequence numbers, the
+                                                       // TCPConnection makes sure that at least one segment is sent in
+                                                       // reply, to reflect an update in the ackno and window size.
+
     if (seg.header().rst) {
         reset(false);
         return;
@@ -34,15 +38,17 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
 
     if (seg.header().ack) {
         _sender.ack_received(seg.header().ackno, seg.header().win);
-        /* ack_received() will call fill_window, thus sending a packet. here seg could be an ordinary ack packet or a
-        packet in three-way-handshake.
-        1. ordinary packet -> trivial
-        2. SYNACK -> after received, from LISTEN to SYN_RECEIVED , or from SYN_SENT to ESTABLISHED.
-        3. ACK ->
+        /* ack_received() will call fill_window, thus sending a packet.
+        The ACK hustle has been taken by TCPSender and TCPReceiver, so calling ack_received here is enough and we dont
+        have to worry about the FSM state transition caused by this ack.
 
-         however, _sender will deal with the SYN issue, so dont worry.*/
+        Besides, things are almost the same when it comes to FIN except there we need to maintain _is_active and
+        `_linger_after_streams_finish` as they are not contained in sender or receiver. It is a little bit more
+        complicated for SYN because sender and receiver only consider SYN in one direction, so to make a complete 3-way
+        handshake we need to tell sender to send a SYN if one received. */
 
-        if (_sender.segments_out().empty() == false) {
+        if (_sender.segments_out().empty() == false &&
+            ack_needed) {  // if ack_received() ALREADY sends a packet, then no more empty acks needed.
             ack_needed = false;
         }
 
@@ -61,6 +67,7 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
          * transition if SYN is received. So we call connnect() to send the SYN, as stated beneath ACK will be added
          * later.*/
         connect();
+        // here sender state should be SYN_SENT, connection in SYN_SENT.
         return;
     }
     /* that's all about 3-way handshake, moving on to clean closing.
@@ -87,6 +94,10 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
     // empty-ack keep-alive
     if (ack_needed) {
         _sender.send_empty_segment();
+    } else if (_receiver.ackno().has_value() && (seg.length_in_sequence_space() == 0) &&
+               seg.header().seqno == _receiver.ackno().value() - 1) {
+        _sender.send_empty_segment();
+        assert(false);
     }
     send_segments_from_sender();
 }
@@ -122,8 +133,7 @@ void TCPConnection::tick(const size_t ms_since_last_tick) {
 
 void TCPConnection::end_input_stream() {
     _sender.stream_in().end_input();
-    /* Is there any further action? */
-    // maybe FIN is needed to be send immediately.
+    // FIN is needed to be send immediately. (TEST 36#,37# active_close)
     _sender.fill_window();
     send_segments_from_sender();
 }
@@ -159,17 +169,14 @@ void TCPConnection::reset(bool send_reset_segment = false) {  // unclean shutdow
     if (send_reset_segment) {
         while (!_sender.segments_out().empty())
             _sender.segments_out().pop();
-        //cerr<<" CONNEC QUEUE SIZE="<<_segments_out.size()<<endl;
-        while(!_segments_out.empty())
+        while (!_segments_out.empty())
             _segments_out.pop();
-        //assert(_sender.segments_out().empty());
+        // clean up outgoing segment queues, making sure previous pushed segments don't interrupt RST segment.
+
         _sender.send_empty_segment();
         _sender.segments_out().front().header().rst = true;
-        //assert(_sender.segments_out().size()==1);
-        //assert(_sender.segments_out().front().header().rst);
-        //cerr<<" IN-SENDER-RESET:"<<_sender.segments_out().front().header().rst<<" size="<<_sender.segments_out().size()<<endl;
+
         send_segments_from_sender();
-        //cerr<<"RESET:"<<_segments_out.front().header().rst<<" size="<<_segments_out.size()<<endl;
     }
 }
 
@@ -179,7 +186,7 @@ TCPConnection::~TCPConnection() {
             cerr << "Warning: Unclean shutdown of TCPConnection\n";
 
             // Your code here: need to send a RST segment to the peer
-            reset(true);
+            reset(true);  // true to send a RST.
         }
     } catch (const exception &e) {
         std::cerr << "Exception destructing TCP FSM: " << e.what() << std::endl;

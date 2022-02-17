@@ -37,16 +37,12 @@ void TCPReceiver::segment_received(const TCPSegment &seg) {
         (cur_abs_seqno - 1) +
         header.syn;  // note that we should skip the logical start SYN, that's why we're adding `header.syn`
 
-    /* Hacked case fsm_ack_rst_relaxed(Lab4) : if `cur_abs_seqno` and `header.syn` all equals zero, i.e. a malicious
-     * packet,then overflow might occur. So a patch here is needed.*/
+    /* Hacked case fsm_ack_rst_relaxed(Lab4) : if `cur_abs_seqno` and `header.syn` all equal zero, i.e. a malicious
+     * packet,then overflow will occur. So a patch here is needed.*/
     if (cur_abs_seqno + header.syn == 0)
         return;
 
-    cerr << "Receiver received segment: payload=|" << seg.payload().copy() << "|len=" << seg.payload().copy().length()
-         << " \n\t" << abs_ack_no << " " << cur_abs_seqno << " " << stream_index << endl;
-    cerr << "\tSYN=" << seg.header().syn << " ACK=" << seg.header().ack << " FIN=" << seg.header().fin << endl;
     _reassembler.push_substring(seg.payload().copy(), stream_index, header.fin);
-    cerr << "After push_string, _reassembler has " << _reassembler.unassembled_bytes() << "unassembled bytes" << endl;
 }
 
 optional<WrappingInt32> TCPReceiver::ackno() const {
