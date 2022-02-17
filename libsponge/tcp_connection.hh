@@ -26,8 +26,9 @@ class TCPConnection {
 
     //! \brief Write data from `_sender.segments_out()` to the outbound byte stream, adding ackno & win from `-_receiver`.
     void send_segments_from_sender();
+    void reset(bool);
 
-    bool _is_active{false};
+    bool _is_active{true};
 
   public:
     //! \name "Input" interface for the writer
