@@ -159,9 +159,17 @@ void TCPConnection::reset(bool send_reset_segment = false) {  // unclean shutdow
     if (send_reset_segment) {
         while (!_sender.segments_out().empty())
             _sender.segments_out().pop();
+        //cerr<<" CONNEC QUEUE SIZE="<<_segments_out.size()<<endl;
+        while(!_segments_out.empty())
+            _segments_out.pop();
+        //assert(_sender.segments_out().empty());
         _sender.send_empty_segment();
         _sender.segments_out().front().header().rst = true;
+        //assert(_sender.segments_out().size()==1);
+        //assert(_sender.segments_out().front().header().rst);
+        //cerr<<" IN-SENDER-RESET:"<<_sender.segments_out().front().header().rst<<" size="<<_sender.segments_out().size()<<endl;
         send_segments_from_sender();
+        //cerr<<"RESET:"<<_segments_out.front().header().rst<<" size="<<_segments_out.size()<<endl;
     }
 }
 
