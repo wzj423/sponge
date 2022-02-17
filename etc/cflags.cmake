@@ -1,6 +1,6 @@
 set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Og -pg -pedantic -pedantic-errors -Werror -Wall -Wextra -Wshadow -Wpointer-arith -Wcast-qual -Wformat=2 -Weffc++ -Wold-style-cast")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -O3 -g -pedantic -pedantic-errors -Werror -Wall -Wextra -Wshadow -Wpointer-arith -Wcast-qual -Wformat=2 -Weffc++ -Wold-style-cast")
 # change -g to -Og -pg , in order to analyze runtime efficiency.
 
 # check for supported compiler versions

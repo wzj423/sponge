@@ -22,6 +22,7 @@ ByteStream::ByteStream(const size_t capacity)
     , _capacity_size(capacity)
     , _end_input(false)
     , _error(false) {
+        DUMMY_CODE(_head,_rear);
     //_queue.reserve(capacity + 1);
 }
 
@@ -30,11 +31,9 @@ size_t ByteStream::write(const string &data) {
         return 0;
     }
     size_t size_to_write = min(data.size(), _capacity_size - _buffer_size);
+    string s=data.substr(0,size_to_write);
+    _buffer.append(BufferList(move(s)));
 
-    for (size_t i = 0; i < size_to_write; ++i) {
-        _rear = (_rear + 1) < _capacity_size ? _rear + 1 : 0;
-        _queue[_rear] = data[i];
-    }
     _written_size += size_to_write;
     _buffer_size += size_to_write;
     return size_to_write;
@@ -42,20 +41,15 @@ size_t ByteStream::write(const string &data) {
 
 //! \param[in] len bytes will be copied from the output side of the buffer
 string ByteStream::peek_output(const size_t len) const {
-    string output;
-    size_t pop_size = min(len, _buffer_size), target = _head;
-    for (size_t i = 0; i < pop_size; ++i) {
-        // auto t = (_head + i + 1) % _capacity_size;
-        target = target + 1 == _capacity_size ? 0 : target + 1;
-        output += _queue[target];
-    }
+    size_t pop_size = min(len, _buffer_size);
+    string output=_buffer.concatenate().substr(0,pop_size);
     return output;
 }
 
 //! \param[in] len bytes will be removed from the output side of the buffer
 void ByteStream::pop_output(const size_t len) {
     size_t pop_size = min(len, _buffer_size);
-    _head = (_head + pop_size) % _capacity_size;
+    _buffer.remove_prefix(pop_size);
     _buffer_size -= pop_size;
     _read_size += pop_size;
 }

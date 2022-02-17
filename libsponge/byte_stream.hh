@@ -1,6 +1,6 @@
 #ifndef SPONGE_LIBSPONGE_BYTE_STREAM_HH
 #define SPONGE_LIBSPONGE_BYTE_STREAM_HH
-
+#include "buffer.hh"
 #include <string>
 #include <vector>
 //! \brief An in-order byte stream.
@@ -17,6 +17,7 @@ class ByteStream {
     // that's a sign that you probably want to keep exploring
     // different approaches.
     std::vector<u_char> _queue;
+    BufferList _buffer={};
     size_t _head, _rear;
     size_t _written_size;  // total bytes written into the stream.
     size_t _read_size;     // total bytes read from the stream.
